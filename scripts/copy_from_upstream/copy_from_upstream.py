@@ -5,18 +5,22 @@
 import argparse
 import copy
 import glob
-import jinja2
-import os
-import shutil
-import subprocess
-import yaml
-from pathlib import Path
-import sys
 import json
-import platform
-import update_upstream_alg_docs
+import os
+import subprocess
+import sys
+
+import jinja2
+import shutil
+import yaml
+
 import copy_from_slh_dsa_c
-from copy import deepcopy
+import update_upstream_alg_docs
+
+# FIX: this is really really bad
+sys.path.insert(1, os.path.join(os.environ['LIBOQS_DIR'], 'scripts'))
+import update_docs_from_yaml
+import update_cbom
 
 # kats of all algs
 kats = {}
@@ -794,7 +798,7 @@ def copy_from_upstream(slh_dsa_inst: dict):
             kats[t] = json.load(fp)
 
     instructions = load_instructions('copy_from_upstream.yml')
-    patched_inst: dict = deepcopy(instructions)
+    patched_inst: dict = copy.deepcopy(instructions)
     patched_inst["sigs"].append(slh_dsa_inst["sigs"][0])
     process_families(instructions, os.environ['LIBOQS_DIR'], True, True)
     replacer('.CMake/alg_support.cmake', instructions, '#####')
@@ -821,10 +825,7 @@ def copy_from_upstream(slh_dsa_inst: dict):
 
     update_upstream_alg_docs.do_it(os.environ['LIBOQS_DIR'])
 
-    sys.path.insert(1, os.path.join(os.environ['LIBOQS_DIR'], 'scripts'))
-    import update_docs_from_yaml
-    import update_cbom
-    update_docs_from_yaml.do_it(os.environ['LIBOQS_DIR'])
+    update_upstream_alg_docs.do_it(os.environ['LIBOQS_DIR'])
     update_cbom.update_cbom_if_algs_not_changed(os.environ['LIBOQS_DIR'], "git")
     if not keepdata:
         shutil.rmtree('repos')
@@ -851,9 +852,6 @@ def copy_from_libjade():
 
     update_upstream_alg_docs.do_it(os.environ['LIBOQS_DIR'], upstream_location='libjade')
 
-    sys.path.insert(1, os.path.join(os.environ['LIBOQS_DIR'], 'scripts'))
-    import update_docs_from_yaml
-    import update_cbom
     update_docs_from_yaml.do_it(os.environ['LIBOQS_DIR'])
     update_cbom.update_cbom_if_algs_not_changed(os.environ['LIBOQS_DIR'], "git")
     if not keepdata:
